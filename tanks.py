@@ -43,7 +43,7 @@ imgBlock =[
     pygame.image.load('images/base.png'),
     ]
 
-imgRing =  pygame.image.load('images/ring.png')
+
 
 imgTanks = [
     pygame.image.load('images/tank1.png'),
