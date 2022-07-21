@@ -1,9 +1,11 @@
 import levels
+import base
 import pygame
 from random import randint
 import time
 
-
+pygame.mixer.pre_init(44100, -16, 1, 512)
+pygame.mixer.init()
 
 pygame.init()
 WIDTH, HEiGHT = 800, 640
@@ -21,8 +23,19 @@ num = 3
 death = 0
 level = 0
 lev = levels.lev[level]
+helmet = 0
+base = base.block[helmet]
+firewall = base
 matrix = lev
-a = matrix
+
+
+
+soundStart = pygame.mixer.Sound('music/battle-city_-tanchiki_-dend.mp3')
+soundBlock = pygame.mixer.Sound('music/battle-city-sfx-3.mp3')
+soundShoot = pygame.mixer.Sound('music/battle-city-sfx-6.mp3')
+soundBang = pygame.mixer.Sound('music/battle-city-sfx-7.mp3')
+soundDrive = pygame.mixer.Sound('music/battle-city-sfx-16.mp3')
+
 
 imgBonus = [
     pygame.image.load('images/bonus_bomb.png'),
@@ -157,6 +170,8 @@ class Tank:
                 self.direct = 2
                 self.rect.y += self.moveSpeed
 
+
+
         for obj in objects:
             if  obj != self and obj.type == 'block' and obj.vid != 3 and self.rect.colliderect(obj.rect):
                 self.rect.topleft = oldX, oldY
@@ -166,9 +181,15 @@ class Tank:
                 objects.remove(obj)
                 if obj.bonus == 0:
                     for obj in objects:
-                        if obj != self and obj.type == 'enemy':
+                        if obj.type == 'enemy':
+                            soundBang.play(0)
                             Bang(obj.px, obj.py)
                             objects.remove(obj)
+                if obj.bonus == 1:
+                    pole(firewall)
+
+
+
 
 
 
@@ -178,6 +199,7 @@ class Tank:
             dy = DIRECTS[self.direct][1] * self.bulletSpeed
             Bullet(self, self.rect.centerx, self.rect.centery, dx, dy, self.bulletDamage)
             self.shotTimer = self.shotDelay
+            soundShoot.play(0)
 
         if self.shotTimer > 0: self.shotTimer -= 1
 
@@ -280,6 +302,7 @@ class Enemy:
 
         if self.hp <= 0:
             objects.remove(self)
+            soundBang.play(0)
 
 
 
@@ -314,6 +337,7 @@ class Bullet:
                         Bang(self.px, self.py)
                         break
                 elif obj.type == "block" and obj.vid != 3 and obj.vid != 4 and obj.type != 'bang' and obj.type != 'bonus' and obj.rect.collidepoint(self.px, self.py):
+                    soundBlock.play(0)
                     obj.damage(self.damage)
                     bullets.remove(self)
                     Bang(self.px, self.py)
@@ -340,7 +364,9 @@ class Bang:
 
     def update(self):
         self.frame += 0.2
-        if self.frame >= 3 : objects.remove(self)
+        if self.frame >= 3 :
+            objects.remove(self)
+
 
     def draw(self):
         image = imgBangs[int(self.frame)]
@@ -467,6 +493,7 @@ ui = UI()
 
 init(num)
 pole(matrix)
+soundStart.play(0)
 
 
 
@@ -506,7 +533,7 @@ while play:
     frame += 1
     if countbonus < 3 and frame > 200:
         frame = 0
-        Bonus(randint(0, 1))
+        Bonus(randint(1, 1))
 
 
     ui.update()
