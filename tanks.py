@@ -533,7 +533,7 @@ while play:
     frame += 1
     if countbonus < 3 and frame > 200:
         frame = 0
-        Bonus(randint(1, 1))
+        Bonus(randint(0, 0))
 
 
     ui.update()
