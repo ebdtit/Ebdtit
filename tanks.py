@@ -66,7 +66,8 @@ imgTanks = [
     pygame.image.load('images/tank5.png'),
     pygame.image.load('images/tank6.png'),
     pygame.image.load('images/tank7.png'),
-    pygame.image.load('images/tank8.png')
+    pygame.image.load('images/tank8.png'),
+    pygame.image.load('images/ggu.png'),
     ]
 imgBangs = [
     pygame.image.load('images/bang1.png'),
@@ -122,7 +123,7 @@ class UI:
 
 
 class Tank:
-    def __init__(self, color, px, py, direct, keyList):
+    def __init__(self, color, px, py, direct, keyList, rank):
         objects.append(self)
         self.type = 'tank'
         self.px = px
@@ -132,7 +133,7 @@ class Tank:
         self.direct = direct
         self.moveSpeed = 2
         self.hp = 10
-        self.shotTimer = 0
+        self.shotTimer = 3
         self.shotDelay = 60
         self.bulletSpeed = 5
         self.bulletDamage = 3
@@ -142,15 +143,25 @@ class Tank:
         self.keyUp = keyList[2]
         self.keyDown = keyList[3]
         self.keyShot = keyList[4]
-
-        self.rank = 2
+        self.frame = 0
+        self.rank = rank
+        self.oldRank = 1
         self.image = pygame.transform.rotate(imgTanks[self.rank], -self.direct * 90)
         self.rect = self.image.get_rect(center = self.rect.center)
+
 
     def update(self):
         self.image = pygame.transform.rotate(imgTanks[self.rank], -self.direct * 90)
         self.image = pygame.transform.scale(self.image, (self.image.get_width() - 5, self.image.get_height() -5))
         self.rect = self.image.get_rect(center=self.rect.center)
+
+        if self.rank == 8:
+            self.frame +=1
+
+            if self.frame == 300:
+                self.rank = self.oldRank
+                self.frame = 0
+
 
         oldX, oldY = self.rect.topleft
         if keys[self.keyLeft]:
@@ -179,14 +190,20 @@ class Tank:
                 self.rect.topleft = oldX, oldY
             if  obj != self and obj.type == 'bonus' and self.rect.colliderect(obj.rect):
                 objects.remove(obj)
-                if obj.bonus == 0:
+                if obj.type == 'bonus' and obj.bonus == 0:
                     for obj in objects:
                         if obj.type == 'enemy':
                             soundBang.play(0)
                             Bang(obj.px, obj.py)
                             objects.remove(obj)
-                if obj.bonus == 1:
+
+                if obj.type == 'bonus' and obj.bonus == 2:
                     pole(firewall)
+
+                if obj.type == 'bonus' and obj.bonus == 1:
+                    self.oldRank = self.rank
+                    start_ticks = pygame.time.get_ticks()
+                    self.rank = 8
 
 
 
@@ -213,10 +230,11 @@ class Tank:
         window.blit(self.image, self.rect)
 
     def damage(self, value):
-        self.hp -= value
-        if self.hp <= 0:
-            objects.remove(self)
-            print(self.color + " убит")
+        if self.rank != 8:
+            self.hp -= value
+            if self.hp <= 0:
+                objects.remove(self)
+                print(self.color + " убит")
 
 class Enemy:
     def __init__(self, px, py, rank):
@@ -481,12 +499,10 @@ def pole(a):
 
 
 
-
-
 bullets = []
 objects = []
-Tank('blue', 10 * TITLE, 19 * TITLE, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
-Tank('red', 14 * TITLE, 19 * TITLE, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_KP0))
+Tank('blue', 10 * TITLE, 19 * TITLE, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE), 8)
+Tank('red', 14 * TITLE, 19 * TITLE, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_KP0), 8)
 ui = UI()
 
 #window.fill('black')
@@ -523,6 +539,8 @@ while play:
 
     for obj in objects:
         obj.update()
+
+
     countEnemu = len([obj for obj in objects if obj.type == 'enemy'])
     if countEnemu < 3:
         frame += 1
@@ -533,7 +551,7 @@ while play:
     frame += 1
     if countbonus < 3 and frame > 200:
         frame = 0
-        Bonus(randint(0, 0))
+        Bonus(randint(0, 4))
 
 
     ui.update()
