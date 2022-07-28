@@ -17,10 +17,9 @@ TITLE = 32
 FPS = 60
 fontUI = pygame.font.Font(None, 30)
 i = 1
-MAXEnemy = 5
-num = 3
-#global death
-death = 0
+startEnemy = 3
+MAXEnemy = 8
+enemy = 0
 level = 0
 lev = levels.lev[level]
 helmet = 0
@@ -137,7 +136,7 @@ class Tank:
         self.shotDelay = 60
         self.bulletSpeed = 5
         self.bulletDamage = 3
-
+        self.kills = 0
         self.keyLeft = keyList[0]
         self.keyRight = keyList[1]
         self.keyUp = keyList[2]
@@ -157,10 +156,10 @@ class Tank:
 
         if self.rank == 8:
             self.frame +=1
-
             if self.frame == 300:
                 self.rank = self.oldRank
                 self.frame = 0
+
 
 
         oldX, oldY = self.rect.topleft
@@ -205,9 +204,18 @@ class Tank:
                     start_ticks = pygame.time.get_ticks()
                     self.rank = 8
 
+                if obj.type == 'bonus' and obj.bonus == 3:
+                    if self.rank <= 7:
+                        self.rank += 1
 
+                if obj.type == 'bonus' and obj.bonus == 4:
+                    if self.hp <= 10:
+                        self.hp += 1
 
-
+                if obj.type == 'bonus' and obj.bonus == 5:
+                    for obj in objects:
+                        if obj.type == 'enemy':
+                            obj.direct = 5
 
 
 
@@ -222,14 +230,14 @@ class Tank:
 
     def draw(self):
 
-       # pygame.draw.rect(window, self.color, self.rect)
-
-        #x = self.rect.centerx + DIRECTS[self.direct][0] * 30
-        #y = self.rect.centery + DIRECTS[self.direct][1] * 30
-        #pygame.draw.line(window, 'white', self.rect.center, (x, y), 4)
+        # pygame.draw.rect(window, self.color, self.rect)
+        #
+        # x = self.rect.centerx + DIRECTS[self.direct][0] * 30
+        # y = self.rect.centery + DIRECTS[self.direct][1] * 30
+        # pygame.draw.line(window, 'white', self.rect.center, (x, y), 4)
         window.blit(self.image, self.rect)
 
-    def damage(self, value):
+    def damage(self, value, killer):
         if self.rank != 8:
             self.hp -= value
             if self.hp <= 0:
@@ -266,11 +274,16 @@ class Enemy:
         self.rect = self.image.get_rect(center=self.rect.center)
         oldX, oldY = self.rect.topleft
 
+        if self.direct == 5:
+            self.frame += 1
+            if self.frame >= 300:
+                self.direct = randint(0, 3)
+                self.frame = 0
 
 
         if self.rank == 1:
             self.moveSpeed = 2
-            self.shotDelay = 70
+            self.shotDelay = 50
         if self.rank == 2:
             self.moveSpeed = 1
             self.shotDelay = 80
@@ -285,10 +298,12 @@ class Enemy:
             self.rect.y -= self.moveSpeed
 
         if  self.shotTimer == 0:
-            dx = DIRECTS[self.direct][0] * self.bulletSpeed
-            dy = DIRECTS[self.direct][1] * self.bulletSpeed
-            Bullet(self, self.rect.centerx, self.rect.centery, dx, dy, self.bulletDamage)
-            self.shotTimer = self.shotDelay
+            if self.direct != 5:
+
+                dx = DIRECTS[self.direct][0] * self.bulletSpeed
+                dy = DIRECTS[self.direct][1] * self.bulletSpeed
+                Bullet(self, self.rect.centerx, self.rect.centery, dx, dy, self.bulletDamage)
+                self.shotTimer = self.shotDelay
 
         if self.shotTimer > 0: self.shotTimer -= 1
 
@@ -312,17 +327,18 @@ class Enemy:
     def draw(self):
         window.blit(self.image, self.rect)
 
-    def damage(self, value):
-
-        self.direct = randint(0, 3)
+    def damage(self, value, killer):
         self.hp -= value
-
-
         if self.hp <= 0:
+
             objects.remove(self)
             soundBang.play(0)
-
-
+            for obj in objects:
+                if obj != self and obj == killer:
+                    obj.kills += 1
+                    print(obj.color + " Количество убийств: " + str(obj.kills))
+                    # if obj.kills > 3:
+                    #     obj.rank += 1
 
 
 
@@ -333,7 +349,6 @@ class Bullet:
         self.px, self.py = px, py
         self.dx, self.dy = dx, dy
         self.damage = damage
-        self.death = death
         self.rect = pygame.Rect(px, py, 4, 4)
 
     def update(self):
@@ -349,7 +364,7 @@ class Bullet:
 
                 if obj != self.parent and obj.type != 'block' and obj.type != 'bang' and obj.type != 'bonus' and obj.rect.collidepoint(self.px, self.py):
                     if obj.type != self.parent.type:
-                        obj.damage(self.damage)
+                        obj.damage(self.damage, self.parent)
 
                         bullets.remove(self)
                         Bang(self.px, self.py)
@@ -446,6 +461,12 @@ class Bonus:
 
 
 def init(num):
+    global enemy
+    enemy += num
+    # if MAXEnemy - enemy <= startEnemy and MAXEnemy - enemy > 0:
+    #     num = MAXEnemy - enemy
+
+    print(enemy)
     for _ in range(num):
 
         while True:
@@ -507,11 +528,9 @@ ui = UI()
 
 #window.fill('black')
 
-init(num)
+init(startEnemy)
 pole(matrix)
 soundStart.play(0)
-
-
 
 
 # for _ in  range(100):
@@ -542,16 +561,26 @@ while play:
 
 
     countEnemu = len([obj for obj in objects if obj.type == 'enemy'])
-    if countEnemu < 3:
+    if countEnemu < startEnemy and MAXEnemy - enemy >= startEnemy:
         frame += 1
         if frame > 200:
             frame = 0
-            init(3)
+            init(startEnemy)
+    else:
+        if countEnemu < startEnemy and MAXEnemy - enemy < startEnemy and MAXEnemy - enemy > 0:
+            #print(MAXEnemy - enemy)
+            frame += 1
+            if frame > 200:
+                frame = 0
+                init(MAXEnemy - enemy)
+
+
+
     countbonus = len([obj for obj in objects if obj.type == 'bonus']) # считаем количество бонусов
     frame += 1
     if countbonus < 3 and frame > 200:
         frame = 0
-        Bonus(randint(0, 4))
+        Bonus(randint(0, 5))
 
 
     ui.update()
@@ -560,9 +589,6 @@ while play:
     for bullet in bullets: bullet.draw()
     for obj in objects: obj.draw()
     ui.draw()
-
-    # time = Timer()
-    # time.start()
 
     pygame.display.update()
     clock.tick(FPS)
