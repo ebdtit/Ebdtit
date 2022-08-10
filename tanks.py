@@ -135,7 +135,7 @@ class Tank:
         self.shotTimer = 3
         self.shotDelay = 60
         self.bulletSpeed = 5
-        self.bulletDamage = 3
+        self.bulletDamage = 1
         self.kills = 0
         self.keyLeft = keyList[0]
         self.keyRight = keyList[1]
@@ -365,6 +365,15 @@ class Bullet:
                 if obj != self.parent and obj.type != 'block' and obj.type != 'bang' and obj.type != 'bonus' and obj.rect.collidepoint(self.px, self.py):
                     if obj.type != self.parent.type:
                         obj.damage(self.damage, self.parent)
+                        if self.dx > 0 and self.dy == 0:
+                            obj.direct = 1
+                        if self.dx < 0 and self.dy == 0:
+                            obj.direct = 3
+                        if self.dy < 0 and self.dx == 0:
+                            obj.direct = 2
+                        if self.dy > 0 and self.dx == 0:
+                            obj.direct = 0
+
 
                         bullets.remove(self)
                         Bang(self.px, self.py)
