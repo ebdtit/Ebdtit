@@ -30,6 +30,8 @@ matrix = lev
 go = False
 play = True
 players = 1
+gameover = False
+
 
 
 soundStart = pygame.mixer.Sound('music/battle-city_-tanchiki_-dend.mp3')
@@ -38,6 +40,8 @@ soundShoot = pygame.mixer.Sound('music/battle-city-sfx-6.mp3')
 soundBang = pygame.mixer.Sound('music/battle-city-sfx-7.mp3')
 soundDrive = pygame.mixer.Sound('music/battle-city-sfx-16.mp3')
 soundEnter = pygame.mixer.Sound('music/battle-city-sfx-10.mp3')
+soundHelth = pygame.mixer.Sound('music/battle-city-sfx-15.mp3')
+soundGameOver = pygame.mixer.Sound('music/battle-city_gameOver.mp3')
 
 
 imgBonus = [
@@ -85,6 +89,7 @@ imgEnemy = [
 ]
 
 imgMenu = pygame.image.load('images/start.png')
+imgGameOver = pygame.image.load('images/gameover.png')
 
 DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 
@@ -164,6 +169,17 @@ class UI:
                 window.blit(myimage, imgrect)
                 window.blit(text, rect)
                 i += 1
+
+def gameover():
+    for obj in objects:
+        if obj.type == 'tank':
+            objects.remove(obj)
+
+    soundGameOver.play(0)
+    window.blit(imgGameOver, (0, 0))
+    pygame.display.flip()
+    sleep(60)
+
 
 
 
@@ -255,6 +271,7 @@ class Tank:
                 if obj.type == 'bonus' and obj.bonus == 3:
                     if self.rank <= 7:
                         self.rank += 1
+                        soundHelth.play(0)
 
                 if obj.type == 'bonus' and obj.bonus == 4:
                     if self.hp <= 10:
@@ -487,8 +504,11 @@ class Block:
 
     def damage(self, value):
         self.hp -= value
-        if self.hp  <= 0 :
+        if self.hp  <= 0  and self.vid != 6:
             objects.remove(self)
+        if self.hp  <= 0 and self.vid == 6:
+            objects.remove(self)
+            gameover()
 
 
 class Bonus:
@@ -609,6 +629,7 @@ soundStart.play(0)
 frame = 0
 
 while play:
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
@@ -643,6 +664,8 @@ while play:
     if countbonus < 3 and frame > 200:
         frame = 0
         Bonus(randint(0, 5))
+    if gameover == True:
+        play = False
 
 
     ui.update()
