@@ -10,7 +10,8 @@ pygame.mixer.init()
 pygame.init()
 WIDTH, HEiGHT = 800, 640
 size = 800, 640
-window = pygame.display.set_mode(size, pygame.DOUBLEBUF | pygame.HWSURFACE)
+#window = pygame.display.set_mode(size, pygame.DOUBLEBUF | pygame.HWSURFACE)
+window = pygame.display.set_mode(size)
 pygame.display.set_caption("Tanks Dendy")
 clock = pygame.time.Clock()
 TITLE = 32
@@ -26,7 +27,9 @@ helmet = 0
 base = base.block[helmet]
 firewall = base
 matrix = lev
-
+go = False
+play = True
+players = 1
 
 
 soundStart = pygame.mixer.Sound('music/battle-city_-tanchiki_-dend.mp3')
@@ -34,6 +37,7 @@ soundBlock = pygame.mixer.Sound('music/battle-city-sfx-3.mp3')
 soundShoot = pygame.mixer.Sound('music/battle-city-sfx-6.mp3')
 soundBang = pygame.mixer.Sound('music/battle-city-sfx-7.mp3')
 soundDrive = pygame.mixer.Sound('music/battle-city-sfx-16.mp3')
+soundEnter = pygame.mixer.Sound('music/battle-city-sfx-10.mp3')
 
 
 imgBonus = [
@@ -79,6 +83,9 @@ imgEnemy = [
     pygame.image.load('images/vrag2.png'),
     pygame.image.load('images/vrag3.png'),
 ]
+
+imgMenu = pygame.image.load('images/start.png')
+
 DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 
 
@@ -86,6 +93,47 @@ DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 #tankDown = pygame.transform.rotate(tank, 180)
 #tankRight = pygame.transform.rotate(tank, 270)
 #tankLeft = pygame.transform.rotate(tank, 90)
+
+
+def menu(go):
+    global play
+    px = TITLE * 7
+    py = TITLE * 12
+    global players
+
+    while go == False:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                play = False
+                go = True
+            if event.type == pygame.KEYDOWN:
+                print('жмакаем ' + str(event.key))
+                if event.key == pygame.K_UP:
+                    #soundBlock.play(0)
+                    py = (TITLE * 12)
+                    players = 1
+
+                if event.key == pygame.K_DOWN:
+                    #soundBlock.play(0)
+                    py = (TITLE * 14)
+                    players = 2
+
+                if event.key == pygame.K_RETURN:
+                    play = True
+                    go = True
+
+
+
+
+
+
+        image = pygame.transform.rotate(imgTanks[8], -90)
+        window.blit(imgMenu, (0, 0))
+        window.blit(image, (px, py))
+        pygame.display.flip()
+
+
+menu(go)
 
 class UI:
     def __init__(self):
@@ -531,8 +579,13 @@ def pole(a):
 
 bullets = []
 objects = []
-Tank('blue', 10 * TITLE, 19 * TITLE, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE), 8)
-Tank('red', 14 * TITLE, 19 * TITLE, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_KP0), 8)
+if players == 1:
+    Tank('Игрок 1', 10 * TITLE, 19 * TITLE, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE), 8)
+
+
+elif players == 2:
+    Tank('Игрок 1', 10 * TITLE, 19 * TITLE, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE), 8)
+    Tank('Игрок 2', 14 * TITLE, 19 * TITLE, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_KP0), 8)
 ui = UI()
 
 #window.fill('black')
@@ -554,7 +607,7 @@ soundStart.play(0)
 #
 #     Block(x, y, TITLE)ws
 frame = 0
-play = True
+
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
